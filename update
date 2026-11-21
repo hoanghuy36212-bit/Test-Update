@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English 6-9 Quest - Global Success & Custom AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Nunito', sans-serif; background-color: #131f24; color: #e5e7eb; user-select: none; }
+        .game-card { background: #202f36; border: 2px solid #374151; border-radius: 1rem; transition: all 0.2s; }
+        .game-card:hover { border-color: #4b5563; }
+        .btn-duolingo { transition: all 0.1s ease; box-shadow: 0 4px 0 0 rgba(0,0,0,0.3); }
+        .btn-duolingo:active { transform: translateY(4px); box-shadow: 0 0 0 0 rgba(0,0,0,0.3); }
+        .flip-card { perspective: 1000px; }
+        .flip-card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .flip-card-back { transform: rotateY(180deg); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #131f24; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- TOP HUD BAR -->
+    <header class="sticky top-0 z-50 bg-[#131f24]/95 backdrop-blur border-b border-gray-800 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500 text-white font-black px-3 py-1 rounded-xl text-lg shadow-lg flex items-center gap-1">
+                    <i class="fa-solid fa-graduation-cap"></i> E6-9
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm sm:text-base text-gray-200">English Quest</h1>
+                    <span class="text-xs text-emerald-400 font-bold">Global Success + Custom</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 sm:space-x-5 text-sm font-bold">
+                <div class="flex items-center gap-2 bg-gray-800/80 px-3 py-1.5 rounded-full border border-gray-700">
+                    <span id="level-badge" class="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">Lv.1</span>
+                    <div class="w-12 sm:w-20 bg-gray-700 h-2 rounded-full overflow-hidden">
+                        <div id="xp-bar" class="bg-purple-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1 text-orange-400" title="Chuỗi ngày">
+                    <i class="fa-solid fa-fire"></i>
+                    <span id="streak-count">1</span>
+                </div>
+
+                <div class="flex items-center gap-1 text-yellow-400" title="Xu vàng">
+                    <i class="fa-solid fa-coins"></i>
+                    <span id="coins-count">60</span>
+                </div>
+
+                <div class="flex items-center gap-1 text-red-500" title="Tim">
+                    <i class="fa-solid fa-heart"></i>
+                    <span id="hearts-count">10</span>
+                </div>
+
+                <button onclick="toggleAudio()" id="audio-btn" class="text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-volume-high text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+        
+        <!-- MAP VIEW -->
+        <div id="view-map-wrapper">
+            <!-- CHỌN KHỐI LỚP & HỌC KỲ -->
+            <div class="bg-[#202f36] p-4 rounded-2xl border border-gray-800 mb-6 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-emerald-400"></i> Bản Đồ Chinh Phục
+                        </h2>
+                        <p class="text-xs text-gray-400">Hoàn thành đủ 4 chặng để mở khóa Unit tiếp theo</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 bg-gray-900/60 p-1.5 rounded-xl border border-gray-700 justify-center">
+                        <button onclick="switchGrade(6)" id="btn-grade-6" class="px-3 py-1 text-xs font-bold rounded-lg bg-gray-800 text-gray-300 transition">Lớp 6</button>
+                        <button onclick="switchGrade(7)" id="btn-grade-7" class="px-3 py-1 text-xs font-bold rounded-lg bg-gray-800 text-gray-300 transition">Lớp 7</button>
+                        <button onclick="switchGrade(8)" id="btn-grade-8" class="px-3 py-1 text-xs font-bold rounded-lg bg-gray-800 text-gray-300 transition">Lớp 8</button>
+                        <button onclick="switchGrade(9)" id="btn-grade-9" class="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white transition">Lớp 9</button>
+                        <button onclick="switchGrade('custom')" id="btn-grade-custom" class="px-3 py-1 text-xs font-bold rounded-lg bg-purple-700 text-white transition flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Đề Của Tôi
+                        </button>
+                    </div>
+                </div>
+
+                <div id="semester-filter-bar" class="flex justify-between items-center pt-2 border-t border-gray-800">
+                    <div class="flex gap-2">
+                        <button onclick="filterSemester(1)" id="btn-sem-1" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition">Học kỳ I</button>
+                        <button onclick="filterSemester(2)" id="btn-sem-2" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-700 text-gray-300 transition">Học kỳ II</button>
+                    </div>
+                    <button onclick="switchTab('upload')" class="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                        <i class="fa-solid fa-plus-circle"></i> Tạo bài từ đề riêng
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-map" class="space-y-6"></div>
+        </div>
+
+        <!-- UPLOAD / CUSTOM LESSON CREATOR VIEW -->
+        <div id="view-upload" class="hidden space-y-6">
+            <div class="bg-[#202f36] p-6 rounded-2xl border border-gray-800 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-black text-white flex items-center gap-2">
+                            <i class="fa-solid fa-file-arrow-up text-purple-400"></i> Tạo Bài Học Từ Đề Của Bạn
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-1">Tải lên file đề (.txt) hoặc dán nội dung bên dưới để hệ thống tự động tạo game 4 chặng.</p>
+                    </div>
+                    <label class="cursor-pointer btn-duolingo bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-folder-open"></i> Chọn File (.txt)
+                        <input type="file" id="file-upload-input" accept=".txt" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                </div>
+
+                <div class="space-y-4 pt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">1. Tên bài học / Đề thi:</label>
+                        <input type="text" id="custom-title" placeholder="Ví dụ: Đề ôn thi giữa kỳ 1 - Tiếng Anh 9" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">
+                            2. Danh sách Từ Vựng (Mỗi dòng 1 từ theo mẫu: <span class="text-emerald-400">từ tiếng Anh - nghĩa tiếng Việt</span>):
+                        </label>
+                        <textarea id="custom-vocab" rows="4" placeholder="environment - môi trường&#10;pollution - sự ô nhiễm&#10;protect - bảo vệ&#10;recycle - tái chế" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 focus:outline-none font-mono"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">
+                            3. Câu hỏi Trắc Nghiệm (Mỗi câu cách nhau 1 dòng trống, thêm dấu <span class="text-yellow-400">*</span> trước đáp án đúng):
+                        </label>
+                        <textarea id="custom-quiz" rows="7" placeholder="She _____ to school every day.&#10;go&#10;*goes&#10;going&#10;is go&#10;&#10;They _____ football at the moment.&#10;play&#10;played&#10;*are playing&#10;plays" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 focus:outline-none font-mono"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">
+                            4. Câu hoàn chỉnh cho game Ghép Câu (Mỗi dòng 1 câu tiếng Anh chuẩn):
+                        </label>
+                        <textarea id="custom-sentences" rows="3" placeholder="We should protect our environment.&#10;Students are studying English now." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 focus:outline-none font-mono"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button onclick="fillSampleCustomData()" class="px-4 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs transition">
+                            Điền dữ liệu mẫu
+                        </button>
+                        <button onclick="createCustomUnit()" class="flex-1 btn-duolingo bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl text-base flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo Bài Học Mới Ngay 🚀
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SHOP VIEW -->
+        <div id="view-shop" class="hidden space-y-6">
+            <div class="bg-[#202f36] p-6 rounded-2xl border border-gray-800 text-center">
+                <h2 class="text-2xl font-black text-white mb-2"><i class="fa-solid fa-store text-yellow-400"></i> Cửa Hàng Vật Phẩm</h2>
+                <p class="text-sm text-gray-400">Dùng xu vàng kiếm được để hồi phục tim hoặc mua trợ giúp.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="game-card p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-500 flex items-center justify-center text-2xl font-bold">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">Hồi Phục Đầy Tim</h3>
+                            <p class="text-xs text-gray-400">Khôi phục ngay lại 10 Tim ❤️</p>
+                        </div>
+                    </div>
+                    <button onclick="buyHearts()" class="btn-duolingo bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-extrabold px-4 py-2 rounded-xl text-sm flex items-center gap-1">
+                        <i class="fa-solid fa-coins"></i> 30
+                    </button>
+                </div>
+                <div class="game-card p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-2xl font-bold">
+                            <i class="fa-solid fa-shield-cat"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">Khiên Bảo Vệ Tim</h3>
+                            <p class="text-xs text-gray-400">Miễn nhiễm mất tim trong bài tiếp theo</p>
+                        </div>
+                    </div>
+                    <button onclick="buyShield()" class="btn-duolingo bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-extrabold px-4 py-2 rounded-xl text-sm flex items-center gap-1">
+                        <i class="fa-solid fa-coins"></i> 50
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BADGES VIEW -->
+        <div id="view-badges" class="hidden space-y-6">
+            <div class="bg-[#202f36] p-6 rounded-2xl border border-gray-800 text-center">
+                <h2 class="text-2xl font-black text-white mb-2"><i class="fa-solid fa-trophy text-yellow-400"></i> Phòng Trưng bày Huy Hiệu</h2>
+                <p class="text-sm text-gray-400">Chinh phục các Unit để sưu tầm huy hiệu danh giá.</p>
+            </div>
+            <div id="badges-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="view-profile" class="hidden space-y-6">
+            <div class="game-card p-6 text-center space-y-4">
+                <div class="w-20 h-20 bg-emerald-500 rounded-full mx-auto flex items-center justify-center text-3xl font-black text-white shadow-xl">
+                    E69
+                </div>
+                <div>
+                    <h2 class="text-xl font-black text-white">Học Sinh Chăm Chỉ</h2>
+                    <p class="text-xs text-emerald-400 font-bold">Chương trình Tiếng Anh THCS Global Success</p>
+                </div>
+                <div class="grid grid-cols-3 gap-3 pt-4 border-t border-gray-800 text-center">
+                    <div class="bg-gray-800/50 p-3 rounded-xl">
+                        <span id="prof-score" class="block text-xl font-black text-yellow-400">0</span>
+                        <span class="text-xs text-gray-400">Tổng XP</span>
+                    </div>
+                    <div class="bg-gray-800/50 p-3 rounded-xl">
+                        <span id="prof-hearts" class="block text-xl font-black text-red-500">10</span>
+                        <span class="text-xs text-gray-400">Tim hiện tại</span>
+                    </div>
+                    <div class="bg-gray-800/50 p-3 rounded-xl">
+                        <span id="prof-streak" class="block text-xl font-black text-orange-400">1</span>
+                        <span class="text-xs text-gray-400">Chuỗi ngày</span>
+                    </div>
+                </div>
+                <button onclick="resetData()" class="text-xs text-red-400 hover:text-red-300 underline pt-2">Đặt lại toàn bộ tiến trình học</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LESSON MODAL -->
+    <div id="lesson-modal" class="fixed inset-0 z-50 bg-[#131f24] hidden flex flex-col">
+        <header class="bg-[#202f36] px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+            <button onclick="closeLesson()" class="text-gray-400 hover:text-white text-lg px-2 py-1">
+                <i class="fa-solid fa-xmark"></i> Thoát
+            </button>
+            <div class="w-1/2 bg-gray-700 h-3 rounded-full overflow-hidden">
+                <div id="lesson-progress" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <div class="flex items-center gap-2 text-red-500 font-bold">
+                <i class="fa-solid fa-heart"></i> <span id="modal-hearts">10</span>
+            </div>
+        </header>
+        <div id="lesson-content" class="flex-1 max-w-2xl w-full mx-auto p-4 flex flex-col justify-center overflow-y-auto"></div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#131f24]/95 backdrop-blur border-t border-gray-800 py-2 z-40">
+        <div class="max-w-md mx-auto flex justify-around">
+            <button onclick="switchTab('map')" id="nav-map" class="flex flex-col items-center text-emerald-400 transition">
+                <i class="fa-solid fa-map text-xl"></i>
+                <span class="text-xs font-bold mt-1">Bản đồ</span>
+            </button>
+            <button onclick="switchTab('upload')" id="nav-upload" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-file-circle-plus text-xl"></i>
+                <span class="text-xs font-bold mt-1">Tạo Đề</span>
+            </button>
+            <button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-store text-xl"></i>
+                <span class="text-xs font-bold mt-1">Cửa hàng</span>
+            </button>
+            <button onclick="switchTab('badges')" id="nav-badges" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-trophy text-xl"></i>
+                <span class="text-xs font-bold mt-1">Huy hiệu</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-user text-xl"></i>
+                <span class="text-xs font-bold mt-1">Hồ sơ</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        const generateUnits = (gradeName, titles) => {
+            return titles.map((titleData, i) => ({
+                id: i + 1,
+                title: `Unit ${i + 1}: ${titleData.en}`,
+                vietnamese: titleData.vi,
+                semester: i < 6 ? 1 : 2,
+                vocab: [
+                    { en: "school", vi: "trường học", phonetic: "/skuːl/", example: "My school is large." },
+                    { en: "student", vi: "học sinh", phonetic: "/ˈstjuːdnt/", example: "Students study hard." },
+                    { en: "teacher", vi: "giáo viên", phonetic: "/ˈtiːtʃə(r)/", example: "Our teacher is helpful." },
+                    { en: "friend", vi: "bạn bè", phonetic: "/frend/", example: "Make new friends." }
+                ],
+                grammar: { title: `Ngữ pháp trọng tâm Unit ${i + 1}`, content: `Hệ thống cấu trúc ngữ pháp quan trọng trong chương trình ${gradeName} Global Success.` },
+                quiz: [
+                    { q: `Chọn dạng đúng của động từ: She _____ to school every day.`, options: ["go", "goes", "going", "is go"], correctText: "goes" },
+                    { q: `Chọn từ loại phù hợp: My brother is very _____ and helpful.`, options: ["kind", "lazily", "slow", "noise"], correctText: "kind" },
+                    { q: `Chọn giới từ đúng: There is a picture _____ the wall.`, options: ["in", "at", "on", "under"], correctText: "on" },
+                    { q: `Chọn đáp án đúng điền vào chỗ trống: They _____ English at the moment.`, options: ["study", "studies", "are studying", "studied"], correctText: "are studying" },
+                    { q: `Chọn cấu trúc so sánh đúng: This house is _____ than that one.`, options: ["big", "bigger", "biggest", "more big"], correctText: "bigger" }
+                ],
+                sentences: [
+                    { scrambled: ["English", "learn", "We", "today"], correct: "We learn English today." },
+                    { scrambled: ["school", "to", "go", "Students"], correct: "Students go to school." }
+                ],
+                boss: { name: `Trùm Unit ${i + 1}`, hp: 100, questions: 5 }
+            }));
+        };
+
+        const titles6 = [
+            { en: "My New School", vi: "Trường mới của tôi" }, { en: "My House", vi: "Ngôi nhà của tôi" },
+            { en: "My Friends", vi: "Những người bạn" }, { en: "My Neighbourhood", vi: "Khu xóm của tôi" },
+            { en: "Natural Wonders", vi: "Kỳ quan thiên nhiên" }, { en: "Tet Holiday", vi: "Ngày Tết nguyên đán" },
+            { en: "Television", vi: "Truyền hình" }, { en: "Sports and Games", vi: "Thể thao và trò chơi" },
+            { en: "Cities of the World", vi: "Các thành phố trên thế giới" }, { en: "Our Houses in the Future", vi: "Nhà ở tương lai" },
+            { en: "Our Greener World", vi: "Thế giới xanh hơn" }, { en: "Robots", vi: "Người máy" }
+        ];
+
+        const titles7 = [
+            { en: "Hobby", vi: "Sở thích" }, { en: "Healthy Living", vi: "Sống khỏe mạnh" },
+            { en: "Community Service", vi: "Hoạt động cộng đồng" }, { en: "Music and Arts", vi: "Âm nhạc và nghệ thuật" },
+            { en: "Food and Drink", vi: "Đồ ăn và thức uống" }, { en: "A Visit to a School", vi: "Thăm trường học" },
+            { en: "Saving Energy", vi: "Tiết kiệm năng lượng" }, { en: "Festivals Around", vi: "Lễ hội xung quanh" },
+            { en: "English in the World", vi: "Tiếng Anh trên thế giới" }, { en: "Energy Sources", vi: "Nguồn năng lượng" },
+            { en: "Travelling in the Future", vi: "Du lịch tương lai" }, { en: "English Speaking Countries", vi: "Các nước nói tiếng Anh" }
+        ];
+
+        const titles8 = [
+            { en: "Leisure Time", vi: "Thời gian rảnh rỗi" }, { en: "Life in the Countryside", vi: "Cuộc sống nông thôn" },
+            { en: "Teenagers", vi: "Thiếu niên" }, { en: "Ethnic Groups", vi: "Các dân tộc thiểu số" },
+            { en: "Our Customs and Traditions", vi: "Phong tục và truyền thống" }, { en: "Lifestyles", vi: "Lối sống" },
+            { en: "Environmental Protection", vi: "Bảo vệ môi trường" }, { en: "Shopping", vi: "Mua sắm" },
+            { en: "Natural Disasters", vi: "Thảm họa thiên nhiên" }, { en: "Communication in the Future", vi: "Giao tiếp tương lai" },
+            { en: "Science and Technology", vi: "Khoa học và công nghệ" }, { en: "Life on Other Planets", vi: "Sự sống hành tinh khác" }
+        ];
+
+        const titles9 = [
+            { en: "Local Community", vi: "Cộng đồng địa phương" }, { en: "City Life", vi: "Cuộc sống thành phố" },
+            { en: "Teenagers", vi: "Giới trẻ" }, { en: "Remembering the Past", vi: "Nhớ về quá khứ" },
+            { en: "Our Experiences", vi: "Những trải nghiệm" }, { en: "Vietnamese Lifestyle", vi: "Lối sống Việt Nam" },
+            { en: "Recipes for Life", vi: "Công thức cuộc sống" }, { en: "Tourism", vi: "Du lịch" },
+            { en: "English in the World", vi: "Tiếng Anh trên thế giới" }, { en: "Space Travel", vi: "Du hành vũ trụ" },
+            { en: "The Environment", vi: "Môi trường" }, { en: "Electronic Devices", vi: "Thiết bị điện tử" }
+        ];
+
+        const dataGrade6 = generateUnits("Lớp 6", titles6);
+        const dataGrade7 = generateUnits("Lớp 7", titles7);
+        const dataGrade8 = generateUnits("Lớp 8", titles8);
+        const dataGrade9 = generateUnits("Lớp 9", titles9);
+
+        let gameState = JSON.parse(localStorage.getItem('english69_custom_v1')) || {
+            currentGrade: 9, level: 1, xp: 0, streak: 1, coins: 60, hearts: 10, maxHearts: 10, shield: false,
+            completedUnits: { 6: [], 7: [], 8: [], 9: [], custom: [] },
+            customUnits: [],
+            audioEnabled: true
+        };
+
+        function saveState() {
+            localStorage.setItem('english69_custom_v1', JSON.stringify(gameState));
+            updateHUD();
+        }
+
+        function updateHUD() {
+            document.getElementById('level-badge').innerText = `Lv.${gameState.level}`;
+            document.getElementById('xp-bar').style.width = `${(gameState.xp % 100)}%`;
+            document.getElementById('streak-count').innerText = gameState.streak;
+            document.getElementById('coins-count').innerText = gameState.coins;
+            document.getElementById('hearts-count').innerText = gameState.hearts;
+            document.getElementById('modal-hearts').innerText = gameState.hearts;
+        }
+
+        function speakText(text) {
+            if (!gameState.audioEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleAudio() {
+            gameState.audioEnabled = !gameState.audioEnabled;
+            const btn = document.getElementById('audio-btn');
+            btn.innerHTML = gameState.audioEnabled ? '<i class="fa-solid fa-volume-high text-lg"></i>' : '<i class="fa-solid fa-volume-xmark text-lg text-red-400"></i>';
+        }
+
+        // --- XỬ LÝ UPLOAD FILE VÀ TẠO ĐỀ TÙY CHỈNH ---
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                document.getElementById('custom-title').value = file.name.replace(/\.[^/.]+$/, "");
+                
+                // Phân tách thông minh nội dung file
+                const lines = content.split('\n').map(l => l.trim()).filter(l => l);
+                let vocabLines = [];
+                let sentenceLines = [];
+                
+                lines.forEach(line => {
+                    if (line.includes(' - ') && line.split(' - ')[0].split(' ').length <= 3) {
+                        vocabLines.push(line);
+                    } else if (!line.includes('?') && !line.includes('_') && line.split(' ').length >= 4 && line.split(' ').length <= 12) {
+                        sentenceLines.push(line);
+                    }
+                });
+
+                if (vocabLines.length > 0) document.getElementById('custom-vocab').value = vocabLines.join('\n');
+                if (sentenceLines.length > 0) document.getElementById('custom-sentences').value = sentenceLines.slice(0, 5).join('\n');
+                
+                // Đưa phần còn lại vào khung trắc nghiệm để người dùng kiểm tra
+                document.getElementById('custom-quiz').value = content;
+                alert("✅ Đã tải nội dung file lên! Bạn có thể kiểm tra lại các mục rồi bấm 'Tạo Bài Học Mới Ngay'.");
+            };
+            reader.readAsText(file);
+        }
+
+        function fillSampleCustomData() {
+            document.getElementById('custom-title').value = "Đề ôn tập Unit 1 - Local Community";
+            document.getElementById('custom-vocab').value = "community - cộng đồng\nartisan - thợ thủ công\nhandicraft - đồ thủ công mỹ nghệ\npreserve - bảo tồn";
+            document.getElementById('custom-quiz').value = 
+`The artisans in my village usually _____ baskets from bamboo.
+*weave
+cast
+mould
+knit
+
+Bat Trang is one of the most famous _____ craft villages in Ha Noi.
+*traditional
+modern
+new
+foreign
+
+They are trying to _____ their traditional customs for future generations.
+destroy
+*preserve
+forget
+leave`;
+            document.getElementById('custom-sentences').value = "We are proud of our traditional craft village.\nArtisans make beautiful handicrafts by hand.";
+        }
+
+        function createCustomUnit() {
+            const title = document.getElementById('custom-title').value.trim() || `Đề Tự Tạo #${gameState.customUnits.length + 1}`;
+            const vocabRaw = document.getElementById('custom-vocab').value.trim();
+            const quizRaw = document.getElementById('custom-quiz').value.trim();
+            const sentenceRaw = document.getElementById('custom-sentences').value.trim();
+
+            // 1. Parse Từ vựng
+            let vocabList = [];
+            if (vocabRaw) {
+                vocabRaw.split('\n').forEach(line => {
+                    const parts = line.split('-');
+                    if (parts.length >= 2) {
+                        vocabList.push({
+                            en: parts[0].trim(),
+                            vi: parts.slice(1).join('-').trim(),
+                            phonetic: "/custom/",
+                            example: `Practice word: ${parts[0].trim()}`
+                        });
+                    }
+                });
+            }
+            if (vocabList.length === 0) {
+                vocabList = [{ en: "practice", vi: "luyện tập", phonetic: "/ˈpræktɪs/", example: "Practice makes perfect." }];
+            }
+
+            // 2. Parse Trắc nghiệm
+            let quizList = [];
+            if (quizRaw) {
+                const blocks = quizRaw.split(/\n\s*\n/);
+                blocks.forEach(block => {
+                    const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+                    if (lines.length >= 3) {
+                        const questionText = lines[0];
+                        let options = [];
+                        let correctText = "";
+                        for (let i = 1; i < lines.length; i++) {
+                            let opt = lines[i];
+                            if (opt.startsWith('*')) {
+                                opt = opt.substring(1).trim();
+                                correctText = opt;
+                            }
+                            options.push(opt);
+                        }
+                        if (!correctText && options.length > 0) correctText = options[0];
+                        quizList.push({ q: questionText, options, correctText });
+                    }
+                });
+            }
+            if (quizList.length === 0) {
+                quizList = [{ q: "Chọn từ đồng nghĩa với 'study':", options: ["learn", "sleep", "play", "eat"], correctText: "learn" }];
+            }
+
+            // 3. Parse Ghép câu
+            let sentenceList = [];
+            if (sentenceRaw) {
+                sentenceRaw.split('\n').map(s => s.trim()).filter(s => s).forEach(s => {
+                    const clean = s.replace(/[.!?]$/, '');
+                    const words = clean.split(/\s+/);
+                    if (words.length >= 2) {
+                        sentenceList.push({ scrambled: words, correct: s });
+                    }
+                });
+            }
+            if (sentenceList.length === 0) {
+                sentenceList = [{ scrambled: ["English", "is", "fun"], correct: "English is fun." }];
+            }
+
+            const newId = gameState.customUnits.length + 1;
+            const newUnit = {
+                id: newId,
+                title: title,
+                vietnamese: `Đề tự tải lên (${vocabList.length} từ, ${quizList.length} câu hỏi)`,
+                semester: 1,
+                vocab: vocabList,
+                grammar: { title: `Tổng hợp kiến thức: ${title}`, content: "Bài học được tạo tự động từ đề thi/tài liệu bạn đã cung cấp. Hãy chinh phục cả 4 chặng để làm chủ kiến thức!" },
+                quiz: quizList,
+                sentences: sentenceList,
+                boss: { name: `Boss: ${title}`, hp: 100, questions: quizList.length }
+            };
+
+            gameState.customUnits.push(newUnit);
+            saveState();
+            alert("🎉 Đã tạo bài học từ đề của bạn thành công!");
+            switchTab('map');
+            switchGrade('custom');
+        }
+
+        function deleteCustomUnit(id) {
+            if (confirm("Xóa bài học tự tạo này?")) {
+                gameState.customUnits = gameState.customUnits.filter(u => u.id !== id);
+                saveState();
+                renderMap();
+            }
+        }
+
+        let currentSemesterFilter = 1;
+
+        function switchGrade(grade) {
+            gameState.currentGrade = grade;
+            [6, 7, 8, 9, 'custom'].forEach(g => {
+                const btn = document.getElementById(`btn-grade-${g}`);
+                if (btn) {
+                    if (g === grade) {
+                        btn.className = g === 'custom' 
+                            ? "px-3 py-1 text-xs font-bold rounded-lg bg-purple-600 text-white transition flex items-center gap-1"
+                            : "px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white transition";
+                    } else {
+                        btn.className = g === 'custom'
+                            ? "px-3 py-1 text-xs font-bold rounded-lg bg-gray-800 text-purple-300 transition flex items-center gap-1"
+                            : "px-3 py-1 text-xs font-bold rounded-lg bg-gray-800 text-gray-300 transition";
+                    }
+                }
+            });
+
+            const semBar = document.getElementById('semester-filter-bar');
+            if (grade === 'custom') {
+                semBar.classList.add('hidden');
+            } else {
+                semBar.classList.remove('hidden');
+            }
+
+            saveState();
+            renderMap();
+        }
+
+        function filterSemester(sem) {
+            currentSemesterFilter = sem;
+            document.getElementById('btn-sem-1').className = sem === 1 ? "px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition" : "px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-700 text-gray-300 transition";
+            document.getElementById('btn-sem-2').className = sem === 2 ? "px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white transition" : "px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-700 text-gray-300 transition";
+            renderMap();
+        }
+
+        function getUnitsByGrade(grade) {
+            if(grade === 6) return dataGrade6;
+            if(grade === 7) return dataGrade7;
+            if(grade === 8) return dataGrade8;
+            if(grade === 'custom') return gameState.customUnits;
+            return dataGrade9;
+        }
+
+        function renderMap() {
+            const mapContainer = document.getElementById('view-map');
+            mapContainer.innerHTML = '';
+
+            const units = getUnitsByGrade(gameState.currentGrade);
+            
+            if (gameState.currentGrade === 'custom' && units.length === 0) {
+                mapContainer.innerHTML = `
+                    <div class="game-card p-8 text-center space-y-4">
+                        <div class="w-16 h-16 bg-purple-500/20 text-purple-400 rounded-full mx-auto flex items-center justify-center text-3xl">
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                        </div>
+                        <h3 class="text-lg font-black text-white">Chưa có đề tự tạo nào</h3>
+                        <p class="text-xs text-gray-400 max-w-md mx-auto">Hãy tải file đề của bạn lên hoặc dán nội dung câu hỏi để hệ thống tự động biến thành trò chơi học tập!</p>
+                        <button onclick="switchTab('upload')" class="btn-duolingo bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-3 rounded-xl text-sm">
+                            + Tạo Bài Học Từ Đề Ngay
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            const filtered = gameState.currentGrade === 'custom' ? units : units.filter(u => u.semester === currentSemesterFilter);
+
+            if(!gameState.completedUnits[gameState.currentGrade]) gameState.completedUnits[gameState.currentGrade] = [];
+
+            filtered.forEach(unit => {
+                const completedArr = gameState.completedUnits[gameState.currentGrade];
+
+                // Đề tự tạo mở khóa sẵn để học luôn; SGK mở khóa tuần tự
+                const isUnlocked = gameState.currentGrade === 'custom' || unit.id === 1 || completedArr.includes(unit.id - 1);
+                const isCompleted = completedArr.includes(unit.id);
+                const progressCount = isCompleted ? 4 : 0;
+
+                const card = document.createElement('div');
+                card.className = `game-card p-5 relative overflow-hidden transition ${!isUnlocked ? 'opacity-60 bg-[#18242a]' : 'bg-[#202f36]'}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl ${isCompleted ? 'bg-emerald-500 text-white' : (isUnlocked ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-400')} flex items-center justify-center font-black text-lg shadow">
+                                ${isCompleted ? '<i class="fa-solid fa-check"></i>' : (isUnlocked ? unit.id : '<i class="fa-solid fa-lock"></i>')}
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold ${isUnlocked ? 'text-emerald-400' : 'text-gray-400'}">
+                                    ${gameState.currentGrade === 'custom' ? 'ĐỀ TỰ TẢI LÊN' : `LỚP ${gameState.currentGrade} • HK${unit.semester}`}
+                                </span>
+                                <h3 class="text-base sm:text-lg font-black text-white">${unit.title}</h3>
+                                <p class="text-xs text-gray-400">${unit.vietnamese}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-300'}">
+                                ${isCompleted ? '⭐ Đã xong' : `${progressCount}/4 Chặng`}
+                            </span>
+                            ${gameState.currentGrade === 'custom' ? `<button onclick="deleteCustomUnit(${unit.id})" class="text-red-400 hover:text-red-300 p-1" title="Xóa đề"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-gray-800/80">
+                        <button onclick="${isUnlocked ? `startStage(${unit.id}, 1)` : 'lockedAlert()'}" class="p-2.5 rounded-xl text-left bg-gray-800/60 hover:bg-gray-800 transition flex items-center gap-2">
+                            <i class="fa-solid fa-gem text-emerald-400"></i>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-white truncate">1. Từ Vựng</p>
+                                <span class="text-[10px] text-gray-400">${unit.vocab.length} thẻ</span>
+                            </div>
+                        </button>
+                        <button onclick="${isUnlocked ? `startStage(${unit.id}, 2)` : 'lockedAlert()'}" class="p-2.5 rounded-xl text-left bg-gray-800/60 hover:bg-gray-800 transition flex items-center gap-2">
+                            <i class="fa-solid fa-book-open text-blue-400"></i>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-white truncate">2. Trắc Nghiệm</p>
+                                <span class="text-[10px] text-gray-400">${unit.quiz.length} câu</span>
+                            </div>
+                        </button>
+                        <button onclick="${isUnlocked ? `startStage(${unit.id}, 3)` : 'lockedAlert()'}" class="p-2.5 rounded-xl text-left bg-gray-800/60 hover:bg-gray-800 transition flex items-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece text-yellow-400"></i>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-white truncate">3. Ghép Câu</p>
+                                <span class="text-[10px] text-gray-400">${unit.sentences.length} câu</span>
+                            </div>
+                        </button>
+                        <button onclick="${isUnlocked ? `startStage(${unit.id}, 4)` : 'lockedAlert()'}" class="p-2.5 rounded-xl text-left bg-gray-800/60 hover:bg-gray-800 transition flex items-center gap-2">
+                            <i class="fa-solid fa-dragon text-red-400"></i>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-white truncate">4. Đấu Boss</p>
+                                <span class="text-[10px] text-gray-400">Tổng hợp</span>
+                            </div>
+                        </button>
+                    </div>
+                `;
+                mapContainer.appendChild(card);
+            });
+        }
+
+        function lockedAlert() {
+            alert("🔒 Unit này đang bị khóa! Bạn cần hoàn thành chiến thắng Boss của Unit trước đó.");
+        }
+
+        function switchTab(tab) {
+            ['map', 'upload', 'shop', 'badges', 'profile'].forEach(t => {
+                const viewEl = t === 'map' ? document.getElementById('view-map-wrapper') : document.getElementById(`view-${t}`);
+                const navEl = document.getElementById(`nav-${t}`);
+                if (viewEl) viewEl.classList.add('hidden');
+                if (navEl) navEl.className = "flex flex-col items-center text-gray-400 hover:text-gray-200 transition";
+            });
+
+            const activeView = tab === 'map' ? document.getElementById('view-map-wrapper') : document.getElementById(`view-${tab}`);
+            const activeNav = document.getElementById(`nav-${tab}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeNav) activeNav.className = "flex flex-col items-center text-emerald-400 transition";
+
+            if (tab === 'badges') renderBadges();
+            if (tab === 'profile') updateProfileStats();
+        }
+
+        function buyHearts() {
+            if (gameState.coins >= 30) {
+                gameState.coins -= 30; gameState.hearts = 10; saveState();
+                alert("Đã hồi phục thành công 10 Tim! ❤️");
+            } else { alert("Bạn không đủ xu vàng!"); }
+        }
+
+        function buyShield() {
+            if (gameState.coins >= 50) {
+                gameState.coins -= 50; gameState.shield = true; saveState();
+                alert("Đã mua Khiên bảo vệ tim thành công! 🛡️");
+            } else { alert("Bạn không đủ xu vàng!"); }
+        }
+
+        function updateProfileStats() {
+            document.getElementById('prof-score').innerText = gameState.xp;
+            document.getElementById('prof-hearts').innerText = gameState.hearts;
+            document.getElementById('prof-streak').innerText = gameState.streak;
+        }
+
+        function resetData() {
+            if (confirm("Đặt lại toàn bộ tiến trình học?")) { localStorage.clear(); location.reload(); }
+        }
+
+        function renderBadges() {
+            const grid = document.getElementById('badges-grid');
+            grid.innerHTML = '';
+            const units = getUnitsByGrade(gameState.currentGrade);
+            const completedArr = gameState.completedUnits[gameState.currentGrade] || [];
+
+            units.forEach(u => {
+                const earned = completedArr.includes(u.id);
+                const item = document.createElement('div');
+                item.className = `game-card p-4 text-center ${earned ? 'border-yellow-500/50 bg-yellow-500/10' : 'opacity-40'}`;
+                item.innerHTML = `
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-2xl ${earned ? 'bg-yellow-500 text-gray-900' : 'bg-gray-800 text-gray-500'} flex items-center justify-center text-3xl shadow">
+                        <i class="fa-solid fa-medal"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-sm">${u.title}</h4>
+                    <p class="text-[11px] text-gray-400">${earned ? 'Đã đạt huy hiệu' : 'Chưa mở khóa'}</p>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        let currentUnitObj = null; let currentStageIdx = 1; let lessonStep = 0; let heartsLostInThisLesson = 0;
+
+        function startStage(unitId, stageNum) {
+            const units = getUnitsByGrade(gameState.currentGrade);
+            currentUnitObj = units.find(u => u.id === unitId);
+            currentStageIdx = stageNum; lessonStep = 0; heartsLostInThisLesson = 0;
+            document.getElementById('lesson-modal').classList.remove('hidden');
+            loadStageContent();
+        }
+
+        function closeLesson() {
+            document.getElementById('lesson-modal').classList.add('hidden');
+            renderMap();
+        }
+
+        function loseHeart() {
+            if (gameState.shield) { gameState.shield = false; alert("🛡️ Khiên bảo vệ đã đỡ 1 lần mất tim!"); return; }
+            if (gameState.hearts > 0) { gameState.hearts--; heartsLostInThisLesson++; saveState(); }
+            if (gameState.hearts <= 0) {
+                document.getElementById('lesson-content').innerHTML = `
+                    <div class="text-center space-y-4">
+                        <div class="text-6xl text-red-500"><i class="fa-solid fa-heart-crack"></i></div>
+                        <h2 class="text-2xl font-black text-white">Bạn đã hết tim!</h2>
+                        <button onclick="closeLesson()" class="btn-duolingo bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl">Quay về bản đồ</button>
+                    </div>`;
+            }
+        }
+
+        function loadStageContent() {
+            if (gameState.hearts <= 0) return;
+            const container = document.getElementById('lesson-content');
+            const totalSteps = currentStageIdx === 1 ? currentUnitObj.vocab.length : (currentStageIdx === 3 ? currentUnitObj.sentences.length : currentUnitObj.quiz.length);
+            document.getElementById('lesson-progress').style.width = `${Math.min(100, (lessonStep / Math.max(1, totalSteps)) * 100)}%`;
+
+            if (currentStageIdx === 1) {
+                if (lessonStep < currentUnitObj.vocab.length) {
+                    const v = currentUnitObj.vocab[lessonStep];
+                    container.innerHTML = `
+                        <div class="text-center space-y-6">
+                            <span class="text-xs font-bold text-emerald-400 uppercase">Chặng 1: Từ Vựng (${lessonStep + 1}/${currentUnitObj.vocab.length})</span>
+                            <div class="flip-card w-full max-w-sm mx-auto h-64 cursor-pointer" onclick="this.classList.toggle('flipped')">
+                                <div class="flip-card-inner relative w-full h-full text-center rounded-2xl shadow-xl">
+                                    <div class="flip-card-front bg-[#202f36] border-2 border-gray-700 rounded-2xl p-6 flex flex-col justify-center items-center">
+                                        <h3 class="text-3xl font-black text-white mb-2">${v.en}</h3>
+                                        <p class="text-emerald-400 text-sm italic mb-4">${v.phonetic}</p>
+                                        <span class="text-xs bg-gray-800 text-gray-300 px-3 py-1 rounded-full">Chạm để lật</span>
+                                    </div>
+                                    <div class="flip-card-back bg-emerald-600 text-white rounded-2xl p-6 flex flex-col justify-center items-center">
+                                        <h3 class="text-2xl font-black mb-2">${v.vi}</h3>
+                                        <p class="text-sm italic mb-4">"${v.example}"</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="lessonStep++; loadStageContent();" class="btn-duolingo w-full max-w-sm mx-auto bg-emerald-600 text-white font-black py-3.5 rounded-2xl text-lg">Tiếp tục ➔</button>
+                        </div>`;
+                    speakText(v.en);
+                } else { finishStageReward(); }
+            } else if (currentStageIdx === 2) {
+                if (lessonStep === 0) {
+                    container.innerHTML = `
+                        <div class="space-y-6 text-center">
+                            <span class="text-xs font-bold text-blue-400 uppercase">Chặng 2: Trắc Nghiệm Kiến Thức</span>
+                            <div class="bg-[#202f36] p-6 rounded-2xl border border-gray-700 text-left space-y-3">
+                                <h3 class="text-lg font-black text-white">${currentUnitObj.grammar.title}</h3>
+                                <p class="text-sm text-gray-300">${currentUnitObj.grammar.content}</p>
+                            </div>
+                            <button onclick="lessonStep++; loadStageContent();" class="btn-duolingo w-full bg-emerald-600 text-white font-black py-3.5 rounded-2xl text-lg">Bắt đầu làm bài (${currentUnitObj.quiz.length} câu) ➔</button>
+                        </div>`;
+                } else {
+                    const qIdx = lessonStep - 1;
+                    if (qIdx < currentUnitObj.quiz.length) {
+                        const q = currentUnitObj.quiz[qIdx];
+                        container.innerHTML = `
+                            <div class="space-y-6">
+                                <span class="text-xs font-bold text-blue-400 uppercase">Câu hỏi ${qIdx + 1}/${currentUnitObj.quiz.length}</span>
+                                <h3 class="text-xl font-black text-white">${q.q}</h3>
+                                <div class="grid grid-cols-1 gap-3">
+                                    ${q.options.map((opt) => `<button onclick="checkQuizAnswer(this, '${opt.replace(/'/g, "\\'")}', '${q.correctText.replace(/'/g, "\\'")}')" class="option-btn btn-duolingo w-full text-left p-4 rounded-2xl bg-[#202f36] border-2 border-gray-700 font-bold text-white"><span>${opt}</span></button>`).join('')}
+                                </div>
+                            </div>`;
+                    } else { finishStageReward(); }
+                }
+            } else if (currentStageIdx === 3) {
+                if (lessonStep < currentUnitObj.sentences.length) {
+                    renderSentenceBuilder(currentUnitObj.sentences[lessonStep]);
+                } else { finishStageReward(); }
+            } else if (currentStageIdx === 4) {
+                if (lessonStep < currentUnitObj.quiz.length) {
+                    const q = currentUnitObj.quiz[lessonStep];
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl">
+                                <h4 class="font-black text-red-400 text-lg"><i class="fa-solid fa-dragon"></i> Đấu Boss (${lessonStep + 1}/${currentUnitObj.quiz.length})</h4>
+                            </div>
+                            <h3 class="text-xl font-black text-white">${q.q}</h3>
+                            <div class="grid grid-cols-1 gap-3">
+                                ${q.options.map((opt) => `<button onclick="checkBossAnswer(this, '${opt.replace(/'/g, "\\'")}', '${q.correctText.replace(/'/g, "\\'")}')" class="option-btn btn-duolingo w-full text-left p-4 rounded-2xl bg-[#202f36] border-2 border-gray-700 font-bold text-white"><span>${opt}</span></button>`).join('')}
+                            </div>
+                        </div>`;
+                } else { finishStageReward(); }
+            }
+        }
+
+        function checkQuizAnswer(btnEl, selectedText, correctText) {
+            if (selectedText.trim() === correctText.trim()) {
+                btnEl.className = "btn-duolingo w-full text-left p-4 rounded-2xl bg-emerald-600 border-2 border-emerald-500 font-bold text-white";
+                setTimeout(() => { lessonStep++; loadStageContent(); }, 800);
+            } else {
+                loseHeart(); if (gameState.hearts <= 0) return;
+                btnEl.className = "btn-duolingo w-full text-left p-4 rounded-2xl bg-red-600/50 border-2 border-red-500 font-bold text-white opacity-50 pointer-events-none";
+                alert("❌ Chưa đúng! Hãy suy nghĩ kỹ lại nhé.");
+            }
+        }
+
+        function checkBossAnswer(btnEl, selectedText, correctText) {
+            if (selectedText.trim() === correctText.trim()) {
+                btnEl.className = "btn-duolingo w-full text-left p-4 rounded-2xl bg-emerald-600 border-2 border-emerald-500 font-bold text-white";
+                setTimeout(() => { lessonStep++; loadStageContent(); }, 800);
+            } else {
+                loseHeart(); if (gameState.hearts <= 0) return;
+                btnEl.className = "btn-duolingo w-full text-left p-4 rounded-2xl bg-red-600/50 border-2 border-red-500 font-bold text-white opacity-50 pointer-events-none";
+                alert("❌ Boss phản công! Chưa đúng, hãy thử lại.");
+            }
+        }
+
+        let currentScrambled = []; let userSelectedWords = [];
+
+        function renderSentenceBuilder(sentenceObj) {
+            currentScrambled = [...sentenceObj.scrambled].sort(() => Math.random() - 0.5);
+            userSelectedWords = [];
+            const container = document.getElementById('lesson-content');
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <span class="text-xs font-bold text-yellow-400 uppercase">Chặng 3: Ghép câu</span>
+                    <h3 class="text-lg font-black text-white">Sắp xếp các từ thành câu đúng:</h3>
+                    <div id="selected-words-box" class="min-h-[60px] bg-[#202f36] border-2 border-dashed border-gray-600 rounded-2xl p-3 flex flex-wrap gap-2 items-center">
+                        <span class="text-xs text-gray-500 italic">Chạm vào từ bên dưới...</span>
+                    </div>
+                    <div id="pool-words-box" class="flex flex-wrap gap-2 pt-2">
+                        ${currentScrambled.map((w, idx) => `<button onclick="pickWord('${w.replace(/'/g, "\\'")}', ${idx})" id="pool-word-${idx}" class="btn-duolingo bg-gray-800 border border-gray-600 px-4 py-2 rounded-xl font-bold text-white text-sm">${w}</button>`).join('')}
+                    </div>
+                    <button onclick="checkSentenceResult('${sentenceObj.correct.replace(/'/g, "\\'")}')" class="btn-duolingo w-full bg-emerald-600 text-white font-black py-3.5 rounded-2xl text-lg">Kiểm tra ➔</button>
+                </div>`;
+        }
+
+        function pickWord(word, idx) {
+            userSelectedWords.push({ word, idx });
+            document.getElementById(`pool-word-${idx}`).classList.add('opacity-30', 'pointer-events-none');
+            updateSelectedWordsBox();
+        }
+
+        function updateSelectedWordsBox() {
+            const box = document.getElementById('selected-words-box');
+            if (userSelectedWords.length === 0) {
+                box.innerHTML = `<span class="text-xs text-gray-500 italic">Chạm vào từ bên dưới...</span>`;
+            } else {
+                box.innerHTML = userSelectedWords.map((item, sIdx) => `<button onclick="returnWord(${sIdx}, ${item.idx})" class="btn-duolingo bg-emerald-600 px-3 py-1.5 rounded-xl font-bold text-white text-sm">${item.word}</button>`).join('');
+            }
+        }
+
+        function returnWord(selectedIdx, poolIdx) {
+            userSelectedWords.splice(selectedIdx, 1);
+            document.getElementById(`pool-word-${poolIdx}`).classList.remove('opacity-30', 'pointer-events-none');
+            updateSelectedWordsBox();
+        }
+
+        function checkSentenceResult(correctSentence) {
+            const userSentence = userSelectedWords.map(i => i.word).join(' ').trim();
+            const cleanUser = userSentence.replace(/[.!?]$/, "").toLowerCase();
+            const cleanCorrect = correctSentence.replace(/[.!?]$/, "").toLowerCase();
+
+            if (cleanUser === cleanCorrect) {
+                alert("Chính xác! 🎉"); lessonStep++; loadStageContent();
+            } else {
+                loseHeart(); if (gameState.hearts <= 0) return;
+                alert("❌ Chưa đúng! Hãy suy nghĩ và sắp xếp lại nhé.");
+            }
+        }
+
+        function finishStageReward() {
+            gameState.xp += 25; gameState.coins += 10;
+            let bonusText = "";
+            if (heartsLostInThisLesson === 0) {
+                gameState.hearts = Math.min(gameState.maxHearts, gameState.hearts + 1);
+                gameState.coins += 15;
+                bonusText = "<br><span class='text-yellow-400 font-bold'>✨ Thưởng hoàn hảo: +1 Tim ❤️ & +15 Vàng 🪙!</span>";
+            }
+            if (gameState.xp >= gameState.level * 100) {
+                gameState.level++;
+                bonusText += `<br><span class='text-purple-400 font-bold'>🚀 Lên Cấp độ ${gameState.level}!</span>`;
+            }
+
+            const grade = gameState.currentGrade;
+            if(!gameState.completedUnits[grade]) gameState.completedUnits[grade] = [];
+
+            if (currentStageIdx === 4 && !gameState.completedUnits[grade].includes(currentUnitObj.id)) {
+                gameState.completedUnits[grade].push(currentUnitObj.id);
+            }
+
+            saveState(); confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+            document.getElementById('lesson-content').innerHTML = `
+                <div class="text-center space-y-6">
+                    <div class="w-24 h-24 bg-yellow-500 rounded-full mx-auto flex items-center justify-center text-4xl text-gray-900 shadow-xl animate-bounce">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white">Hoàn Thành Xuất Sắc Chặng Này!</h2>
+                        <p class="text-sm text-emerald-400 mt-1">${currentUnitObj.title}</p>
+                        <p class="text-xs text-gray-400 mt-2">+25 XP | +10 Vàng ${bonusText}</p>
+                    </div>
+                    <button onclick="closeLesson()" class="btn-duolingo w-full max-w-sm mx-auto bg-emerald-600 text-white font-black py-4 rounded-2xl text-lg">Hoàn thành ✔</button>
+                </div>`;
+        }
+
+        switchGrade(9);
+    </script>
+</body>
+</html>
